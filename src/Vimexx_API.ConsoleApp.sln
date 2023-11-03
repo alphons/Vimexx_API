@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.7.34024.191
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Vimexx_API.ConsoleApp", "Vimexx_API.ConsoleApp\Vimexx_API.ConsoleApp.csproj", "{FDE3B72E-BB5C-4746-B1AF-333A2605F69C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Vimexx_API.Api", "Vimexx_API.Api\Vimexx_API.Api.csproj", "{25984D85-DE61-4628-ABF4-70C69ABEE2CF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FDE3B72E-BB5C-4746-B1AF-333A2605F69C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FDE3B72E-BB5C-4746-B1AF-333A2605F69C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FDE3B72E-BB5C-4746-B1AF-333A2605F69C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FDE3B72E-BB5C-4746-B1AF-333A2605F69C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{25984D85-DE61-4628-ABF4-70C69ABEE2CF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{25984D85-DE61-4628-ABF4-70C69ABEE2CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{25984D85-DE61-4628-ABF4-70C69ABEE2CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{25984D85-DE61-4628-ABF4-70C69ABEE2CF}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5319399D-84BC-4157-B030-7567B68851B0}
+	EndGlobalSection
+EndGlobal
