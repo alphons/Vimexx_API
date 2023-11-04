@@ -1,23 +1,82 @@
 # Vimexx_API
 Vimexx_API partly implementation for making the LetsEcnrypt DNS challenge (needed for wildcard certs)
 
-First create the WHMCS API credentials on the Vimexx website https://my.vimexx.nl/api
-
-You also need your userid and password of your account.
-
 Call LetsEncryptAsync to make the challenge record in DNS.
 
-Happy Cert-wild-carding.
+The challenge can be obtained by the https://github.com/fszlin/certes project.
 
+```C#
+var order = await acme.NewOrder(new[] { "*.example.com" });
+
+var authz = (await order.Authorizations()).First();
+var dnsChallenge = await authz.Dns();
+var dnsTxt = acme.AccountKey.DnsTxt(dnsChallenge.Token);
+```
+And use the dnsTxt to make the challende entry in DNS.
+
+First create the WHMCS API credentials on the Vimexx website https://my.vimexx.nl/api
+
+You also need your userid and password of your account for login to the Vimexx systems.
 
 ```C#
 using Vimexx_API.Api;
 
 var api = new Api();
 
-await api.LoginAsync("<clientid>", "<client-secret>", "<userid>", "<password>");
+await api.LoginAsync("<vimexx-clientid>", "<vimexx-client-secret>", "<vimexx-userid>", "<vimexx-password>");
 
-var result = await api.LetsEncryptAsync("voorbeeld.nl", "<challenge>");
-
-Console.WriteLine($"result: {result.message}");
+var result = await api.LetsEncryptAsync("example.com", dnsTxt);
 ```
+
+Now the DNS at Vimexx is setup to make the LetsEncryt validate call.
+
+```C#
+await dnsChallenge.Validate();
+```
+
+Download the certificate once validation is done (put in here your own credentials please)
+
+```C#
+var privateKey = KeyFactory.NewKey(KeyAlgorithm.ES256);
+var cert = await order.Generate(new CsrInfo
+{
+    CountryName = "NL",
+    State = "Flevoland",
+    Locality = "Lelystad",
+    Organization = "Van der Heijden BV",
+    OrganizationUnit = "ICT"
+    //CommonName = "example.com",
+}, privateKey);
+```
+
+Export PFX data
+
+```C#
+var pfxBuilder = cert.ToPfx(privateKey);
+var pfxData = pfxBuilder.Build("cert-friendly-name", "<some-password>");
+```
+
+Save the pfx data and import them into a cert store.
+
+```C#
+await File.WriteAllBytesAsync("cert-name.pfx", pfxData);
+
+var store = new X509Store("WebHosting", StoreLocation.LocalMachine))
+store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
+
+var certificate = new X509Certificate2("cert-name.pfx", 
+  "<some-password>",
+  X509KeyStorageFlags.MachineKeySet |
+  X509KeyStorageFlags.PersistKeySet |
+  X509KeyStorageFlags.Exportable);
+
+store.Add(certificate);
+store.Close();
+```
+Now the cert can for example be selected in the IIS admin when binding to its https address.
+
+For more information on getting the cert see the certes project.
+
+
+Happy Cert-wild-carding.
+
