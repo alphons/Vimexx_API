@@ -6,6 +6,9 @@ Call LetsEncryptAsync to make the challenge record in DNS.
 The challenge can be obtained by the https://github.com/fszlin/certes project.
 
 ```C#
+var acme = new AcmeContext(WellKnownServers.LetsEncryptStagingV2);
+var account = await acme.NewAccount("admin@example.com", true);
+
 var order = await acme.NewOrder(new[] { "*.example.com" });
 
 var authz = (await order.Authorizations()).First();
@@ -32,11 +35,13 @@ await api.LoginAsync(
 var result = await api.LetsEncryptAsync("example.com", dnsTxt);
 ```
 
-Now the DNS at Vimexx is setup to make the LetsEncryt validate call.
+Now the DNS at Vimexx is setup to make the LetsEncryt DNS validation call.
 
 ```C#
 await dnsChallenge.Validate();
 ```
+
+Sometimes a few seconds has to be waited and retry for validation is successfull (loop it).
 
 Download the certificate once validation is done (put in here your own credentials please)
 
