@@ -1,11 +1,14 @@
 ﻿
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Net.Http;
 using System.Net.Http.Headers;
 
 using System.Text;
 using System.Text.Json;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+using System.Threading.Tasks;
 
 namespace Vimexx_API.Api
 {
@@ -23,7 +26,7 @@ namespace Vimexx_API.Api
 
 		async private Task<T> RequestAsync<T>(HttpMethod method, string apiMethod, object data)
 		{
-			using var httpClient = new HttpClient();
+			var httpClient = new HttpClient();
 
 			httpClient.DefaultRequestHeaders.Add("User-Agent", USER_AGENT);
 
@@ -36,13 +39,13 @@ namespace Vimexx_API.Api
 				Content = new StringContent(json, Encoding.UTF8, "application/json")
 			};
 
-			using var httpResponseMessage = await httpClient.SendAsync(request);
+			var httpResponseMessage = await httpClient.SendAsync(request);
 
 			httpResponseMessage.EnsureSuccessStatusCode();
 
 			if (httpResponseMessage.IsSuccessStatusCode)
 			{
-				using var stream = await httpResponseMessage.Content.ReadAsStreamAsync();
+				var stream = await httpResponseMessage.Content.ReadAsStreamAsync();
 
 				if (DEBUG)
 				{
@@ -73,19 +76,19 @@ namespace Vimexx_API.Api
 					{ "scope",          "whmcs-access" }
 				}.ToList();
 
-			using var httpClient = new HttpClient();
+			var httpClient = new HttpClient();
 
 			httpClient.DefaultRequestHeaders.Add("User-Agent", USER_AGENT);
 
-			using var req = new HttpRequestMessage(HttpMethod.Post, API_URL + "/auth/token") { Content = new FormUrlEncodedContent(data) };
+			var req = new HttpRequestMessage(HttpMethod.Post, API_URL + "/auth/token") { Content = new FormUrlEncodedContent(data) };
 
-			using var httpResponseMessage = await httpClient.SendAsync(req);
+			var httpResponseMessage = await httpClient.SendAsync(req);
 
 			httpResponseMessage.EnsureSuccessStatusCode();
 
 			if (httpResponseMessage.IsSuccessStatusCode)
 			{
-				using var stream = await httpResponseMessage.Content.ReadAsStreamAsync();
+				var stream = await httpResponseMessage.Content.ReadAsStreamAsync();
 
 				this.token = await JsonSerializer.DeserializeAsync<AuthToken>(stream);
 			}
@@ -121,7 +124,11 @@ namespace Vimexx_API.Api
 			if (getdnsresponse.result == false)
 				return new Response<object>() { result = getdnsresponse.result, message = getdnsresponse.message };
 
-			var records = getdnsresponse.data.dns_records.Where(x => !x.name.StartsWith("_acme-challenge.")).ToList();
+			var records = getdnsresponse.data.dns_records;
+
+			// clear all _acme-challenge records
+			if (string.IsNullOrWhiteSpace(challenge))
+				records = records.Where(x => !x.name.StartsWith("_acme-challenge.")).ToList();
 
 			if(!string.IsNullOrWhiteSpace(challenge))
 				records.Add(new DnsRecord() { name = "_acme-challenge", content = challenge, type = "TXT", ttl = 300 });
