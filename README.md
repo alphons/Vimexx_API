@@ -23,7 +23,11 @@ using Vimexx_API.Api;
 
 var api = new Api();
 
-await api.LoginAsync("<vimexx-clientid>", "<vimexx-client-secret>", "<vimexx-userid>", "<vimexx-password>");
+await api.LoginAsync(
+  "<vimexx-clientid>", 
+  "<vimexx-client-secret>", 
+  "<vimexx-userid>", 
+  "<vimexx-password>");
 
 var result = await api.LetsEncryptAsync("example.com", dnsTxt);
 ```
