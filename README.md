@@ -58,7 +58,15 @@ var cert = await order.Generate(new CsrInfo
 }, privateKey);
 ```
 
-Export PFX data
+Two options here, exporting the pem data or making pfx file.
+
+Export full chain certification in pem format.
+
+```C#
+var certPem = cert.ToPem();
+```
+
+Export PFX data to a file.
 
 ```C#
 var pfxBuilder = cert.ToPfx(privateKey);
