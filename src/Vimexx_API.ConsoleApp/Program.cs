@@ -1,7 +1,7 @@
 ﻿
 using Vimexx_API.Api;
 
-var api = new Api();
+var api = new VimexxApi();
 
 await api.LoginAsync("123", "5aYB3pmxJNA4r2YdltRuDdnVTlNnLe22Ti0k26Z7", "<userid>", "<password>", false);
 
