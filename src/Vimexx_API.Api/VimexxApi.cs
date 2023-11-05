@@ -1,18 +1,14 @@
 ﻿
-using System.Collections.Generic;
+
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Net.Http;
 using System.Net.Http.Headers;
 
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace Vimexx_API.Api
 {
-	public class Api
+	public class VimexxApi
 	{
 		private const string USER_AGENT = "Vimexx-WHMCS api agent .NET core 1.0";
 		private const string API_URL = "https://api.vimexx.nl";
@@ -115,6 +111,21 @@ namespace Vimexx_API.Api
 			dns_records.Where(x => x.type == "CAA").ToList().ForEach(x => x.ttl = 300);
 
 			return await RequestAsync<SaveDNSResponse>(HttpMethod.Put, "/whmcs/domain/dns", new { sld = args[0], tld = args[1], dns_records });
+		}
+
+		async public Task<Response<object>> LetsEncryptAsync(string domainname, List<string> challenges)
+		{
+			var getdnsresponse = await GetDNSAsync(domainname);
+
+			if (getdnsresponse.result == false)
+				return new Response<object>() { result = getdnsresponse.result, message = getdnsresponse.message };
+
+			var records = getdnsresponse.data.dns_records.Where(x => !x.name.StartsWith("_acme-challenge.")).ToList();
+
+			foreach(var challenge in challenges)
+				records.Add(new DnsRecord() { name = "_acme-challenge", content = challenge, type = "TXT", ttl = 300 });
+
+			return await SaveDNSAsync(domainname, records);
 		}
 
 		async public Task<Response<object>> LetsEncryptAsync(string domainname, string challenge)
