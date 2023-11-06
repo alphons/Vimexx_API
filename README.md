@@ -24,7 +24,7 @@ You also need your userid and password of your account for login to the Vimexx s
 ```C#
 using Vimexx_API.Api;
 
-var api = new Api();
+var api = new VimexxApi();
 
 await api.LoginAsync(
   "<vimexx-clientid>", 
