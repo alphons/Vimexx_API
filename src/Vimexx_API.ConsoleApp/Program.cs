@@ -1,5 +1,5 @@
 ﻿
-using Vimexx_API.Api;
+using Vimexx_API;
 
 var api = new VimexxApi();
 

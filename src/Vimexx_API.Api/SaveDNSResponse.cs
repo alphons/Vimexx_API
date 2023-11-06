@@ -1,7 +1,6 @@
 ﻿
-namespace Vimexx_API.Api
+namespace Vimexx_API;
+
+public class SaveDNSResponse : Response<object>
 {
-	public class SaveDNSResponse : Response<object>
-	{
-	}
 }
