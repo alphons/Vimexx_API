@@ -3,7 +3,9 @@ Vimexx_API partly implementation for making the LetsEcnrypt DNS challenge (neede
 
 Call LetsEncryptAsync to make the challenge record in DNS.
 
-The challenge can be obtained by the https://github.com/fszlin/certes project.
+This library uses the [Certes](https://github.com/fszlin/certes) project.
+
+As an example, have a look at [LetsEncryptIIS](https://github.com/alphons/LetsEncryptIIS) which combines the Vimexx_Api to install certificates on IIS Webserver.
 
 ```C#
 var acme = new AcmeContext(WellKnownServers.LetsEncryptStagingV2);
