@@ -5,7 +5,7 @@ VisualStudioVersion = 17.7.34024.191
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Vimexx_API.ConsoleApp", "Vimexx_API.ConsoleApp\Vimexx_API.ConsoleApp.csproj", "{FDE3B72E-BB5C-4746-B1AF-333A2605F69C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Vimexx_API", "Vimexx_API.Api\Vimexx_API.csproj", "{25984D85-DE61-4628-ABF4-70C69ABEE2CF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Vimexx_API", "Vimexx_API\Vimexx_API.csproj", "{25984D85-DE61-4628-ABF4-70C69ABEE2CF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
