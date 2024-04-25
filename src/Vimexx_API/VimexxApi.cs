@@ -1,60 +1,75 @@
-﻿
-
-using System.Diagnostics;
-using System.Net.Http.Headers;
-
+﻿using System.Dynamic;
 using System.Text;
 using System.Text.Json;
 
+
 namespace Vimexx_API;
 
-public class VimexxApi
+public class VimexxApi(StringBuilder log)
 {
+	private const int TTL = 3600;
 	private const string USER_AGENT = "Vimexx-WHMCS api agent .NET core 1.0";
 	private const string API_URL = "https://api.vimexx.nl";
 	private const string API_VERSION = "8.6.1-release.1";
 
-	private string endpoint;
+	private string endpoint = API_URL + "/api/v1";
 
-	private AuthToken token;
+	private AuthToken? token;
 
-	private bool DEBUG = false;
+	private readonly StringBuilder log = log;
 
-	async private Task<T> RequestAsync<T>(HttpMethod method, string apiMethod, object data)
+	async private Task<T?> RequestAsync<T>(HttpMethod method, string apiMethod, object data)
 	{
-		var httpClient = new HttpClient();
+		var jsonResult = string.Empty;
+		var jsonRequest = string.Empty;
 
-		httpClient.DefaultRequestHeaders.Add("User-Agent", USER_AGENT);
-
-		httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", this.token.access_token);
-
-		var json = JsonSerializer.Serialize(new { body = data, version = API_VERSION });
-
-		var request = new HttpRequestMessage(method, this.endpoint + apiMethod)
+		if (this.token == null)
 		{
-			Content = new StringContent(json, Encoding.UTF8, "application/json")
-		};
+			log.AppendLine("Error: token is null");
+			return default;
+		}
 
-		var httpResponseMessage = await httpClient.SendAsync(request);
-
-		httpResponseMessage.EnsureSuccessStatusCode();
-
-		if (httpResponseMessage.IsSuccessStatusCode)
+		try
 		{
-			var stream = await httpResponseMessage.Content.ReadAsStreamAsync();
+			var httpClient = new HttpClient();
 
-			if (DEBUG)
+			httpClient.DefaultRequestHeaders.Add("User-Agent", USER_AGENT);
+
+			httpClient.DefaultRequestHeaders.Authorization = 
+				new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", this.token.access_token);
+
+			jsonRequest = JsonSerializer.Serialize(new { body = data, version = API_VERSION });
+
+			var request = new HttpRequestMessage(method, this.endpoint + apiMethod)
 			{
+				Content = new StringContent(jsonRequest, Encoding.UTF8, "application/json")
+			};
+
+			var httpResponseMessage = await httpClient.SendAsync(request);
+
+			httpResponseMessage.EnsureSuccessStatusCode();
+
+			if (httpResponseMessage.IsSuccessStatusCode)
+			{
+				var stream = await httpResponseMessage.Content.ReadAsStreamAsync();
+
 				var sr = new StreamReader(stream);
 
-				var jsonResult = await sr.ReadToEndAsync();
+				jsonResult = await sr.ReadToEndAsync();
 
-				Debug.WriteLine(jsonResult);
-
-				return JsonSerializer.Deserialize<T>(jsonResult);
+				try
+				{
+					return JsonSerializer.Deserialize<T>(jsonResult);
+				}
+				catch
+				{
+					log.AppendLine($"Error: Deserialize: {apiMethod}{Environment.NewLine}{jsonRequest}{Environment.NewLine}{jsonResult}{Environment.NewLine}");
+				}
 			}
-
-			return await JsonSerializer.DeserializeAsync<T>(stream);
+		}
+		catch(Exception eee)
+		{
+			log.AppendLine($"Error: Exception: {eee.Message}: {apiMethod}{Environment.NewLine}{jsonRequest}{Environment.NewLine}{jsonResult}{Environment.NewLine}");
 		}
 
 		return default;
@@ -91,36 +106,42 @@ public class VimexxApi
 
 		if (testmodus)
 			this.endpoint = API_URL + "/apitest/v1";
-		else
-			this.endpoint = API_URL + "/api/v1";
-
 	}
 
-	async public Task<GetDNSResponse> GetDNSAsync(string domainname)
+	async public Task<GetDNSResponse?> GetDNSAsync(string domainname)
 	{
 		var args = domainname.Split('.');
 
 		return await RequestAsync<GetDNSResponse>(HttpMethod.Post, "/whmcs/domain/dns", new { sld = args[0], tld = args[1] });
 	}
 
-	async public Task<SaveDNSResponse> SaveDNSAsync(string domainname, List<DnsRecord> dns_records)
+	async public Task<SaveDNSResponse?> SaveDNSAsync(string domainname, List<DnsRecord> dns_records)
 	{
 		var args = domainname.Split('.');
 
-		dns_records.Where(x => x.ttl == null).ToList().ForEach(x => x.ttl = 3600);
-		dns_records.Where(x => x.type == "CAA").ToList().ForEach(x => x.ttl = 300);
+		dns_records.Where(x => x.ttl == null).ToList().ForEach(x => x.ttl = TTL);
+		dns_records.Where(x => x.type == "CAA").ToList().ForEach(x => x.ttl = TTL);
 
 		return await RequestAsync<SaveDNSResponse>(HttpMethod.Put, "/whmcs/domain/dns", new { sld = args[0], tld = args[1], dns_records });
 	}
 
-	async public Task<Response<object>> LetsEncryptAsync(string domainname, List<string> challenges)
+	async public Task<Response<object>?> LetsEncryptAsync(string domainname, List<string> challenges)
 	{
 		var getdnsresponse = await GetDNSAsync(domainname);
+
+		if (getdnsresponse == null)
+		{
+			log.AppendLine($"Error: GetDNSAsync returned null on {domainname}");
+			return null;
+		}
 
 		if (getdnsresponse.result == false)
 			return new Response<object>() { result = getdnsresponse.result, message = getdnsresponse.message };
 
-		var records = getdnsresponse.data.dns_records.Where(x => !x.name.StartsWith("_acme-challenge.")).ToList();
+		if (getdnsresponse.data == null || getdnsresponse.data.dns_records == null)
+			return null;
+
+		var records = getdnsresponse.data.dns_records.Where(x => x.name.StartsWith("_acme-challenge.")).ToList();
 
 		foreach(var challenge in challenges)
 			records.Add(new DnsRecord() { name = "_acme-challenge", content = challenge, type = "TXT", ttl = 300 });
@@ -128,18 +149,27 @@ public class VimexxApi
 		return await SaveDNSAsync(domainname, records);
 	}
 
-	async public Task<Response<object>> LetsEncryptAsync(string domainname, string challenge)
+	async public Task<Response<object>?> LetsEncryptAsync(string domainname, string challenge)
 	{
 		var getdnsresponse = await GetDNSAsync(domainname);
 
+		if (getdnsresponse == null)
+		{
+			log.AppendLine($"Error: LetsEncryptAsync GetDNSAsync returns null");
+			return null;
+		}
+
 		if (getdnsresponse.result == false)
 			return new Response<object>() { result = getdnsresponse.result, message = getdnsresponse.message };
+
+		if (getdnsresponse.data == null || getdnsresponse.data.dns_records == null)
+			return null;
 
 		var records = getdnsresponse.data.dns_records;
 
 		// clear all _acme-challenge records
 		if (string.IsNullOrWhiteSpace(challenge))
-			records = records.Where(x => !x.name.StartsWith("_acme-challenge.")).ToList();
+			records = records.Where(x => x.name.StartsWith("_acme-challenge.")).ToList();
 
 		if(!string.IsNullOrWhiteSpace(challenge))
 			records.Add(new DnsRecord() { name = "_acme-challenge", content = challenge, type = "TXT", ttl = 300 });
